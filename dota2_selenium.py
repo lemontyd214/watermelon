@@ -1,5 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 import youtube_dl
 import time
 import os
@@ -8,9 +9,14 @@ import requests
 import sys
 
 
-LOCAL_TEST = True
-LONG_GAP = 10
-SHORT_GAP = 2
+LOCAL_TEST = False
+
+if LOCAL_TEST:
+    LONG_GAP = 10
+    SHORT_GAP = 2
+else:
+    LONG_GAP = 90
+    SHORT_GAP = 20
 
 
 target_youtube_user = [
@@ -20,24 +26,36 @@ target_youtube_user = [
 
 
 def upload():
-    driver = webdriver.Chrome()
+    if LOCAL_TEST:
+        # driver = webdriver.Chrome()
+        # driver.maximize_window()
+        desired_capabilities = DesiredCapabilities.CHROME
+        desired_capabilities["pageLoadStrategy"] = "none"
+        options = webdriver.ChromeOptions()
+        options.add_argument('--headless')
+        options.add_argument('--no-sandbox')
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--window-size=1920,3000")
+        options.add_argument("--start-maximized")
+        driver = webdriver.Chrome(options=options)
+    else:
+        desired_capabilities = DesiredCapabilities.CHROME
+        desired_capabilities["pageLoadStrategy"] = "none"
+        options = webdriver.ChromeOptions()
+        options.add_argument('--headless')
+        options.add_argument('--no-sandbox')
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--window-size=1920,3000")
+        options.add_argument("--start-maximized")
+        driver = webdriver.Chrome(options=options)
 
     print("start uploading")
 
-    # options = webdriver.ChromeOptions()
-    # options.add_argument('--headless')
-    # options.add_argument('--no-sandbox')
-    # options.add_argument("--disable-dev-shm-usage")
-    # options.add_argument("--window-size=1920,3000")
-    # options.add_argument("--start-maximized")
-    # driver = webdriver.Chrome(options=options)
-
     # 初始化过程
     try:
-        driver.maximize_window()
         # 创作平台主页
         print("start init")
-        driver.get("https://studio.ixigua.com/welcome")
+        driver.get("https://studio.ixigua.com")
 
         time.sleep(LONG_GAP)
         print("init success")
@@ -49,39 +67,82 @@ def upload():
 
     # 登录过程
     try:
-        attempt = 1
-        # 登录按钮
-        while True:
-            print("attempt: {}".format(attempt))
-            print("login button")
-            driver.find_element_by_class_name("login-btn").click()
-            time.sleep(SHORT_GAP)
-
-            # 切换为密码登录
-            print("switch")
-            driver.find_element_by_class_name("web-login-link-list").click()
-            time.sleep(SHORT_GAP)
-
-            # 输入账号密码
-            print("username-password")
-            driver.find_element_by_class_name("web-login-normal-input__input").send_keys(14701021843)
-            driver.find_element_by_class_name("web-login-button-input__input").send_keys("ty1994214")
-            driver.find_element_by_xpath("//*[@id='BD_Login_Form']/div/article/article/div[1]/div[1]/div[2]/article/div[5]/button").click()
-            # driver.find_element_by_class_name("web-login-button").click()
-            time.sleep(LONG_GAP)
-
-            if driver.current_url == "https://studio.ixigua.com/welcome":
-                driver.refresh()
-                attempt += 1
-            else:
-                break
-
-        print("login success")
+        print("clear cookies")
+        driver.delete_all_cookies()
+        time.sleep(SHORT_GAP)
+        # 读取cookie
+        print("read cookies")
+        with open('cookies.txt', 'r') as f:
+            # 使用json读取cookies 注意读取的是文件 所以用load而不是loads
+            cookies_list = json.load(f)
+            for cookie in cookies_list:
+                cookie['expiry'] = 2000000000
+                driver.add_cookie(cookie)
+        time.sleep(SHORT_GAP)
+        print("redirect")
+        driver.get("https://studio.ixigua.com/?is_new_connect=0&is_new_user=0")
+        time.sleep(SHORT_GAP)
+        if driver.current_url == "https://studio.ixigua.com/?is_new_connect=0&is_new_user=0":
+            print("cookie login success")
+        else:
+            notify_procedure("cookie登录失败，请手动更新cookie")
+            driver.quit()
+            return False
     except Exception as e:
         print("login error")
         print(e)
         driver.quit()
         return False
+    # 旧的账号密码登录方式，暂时弃用，用cookie登录方式
+    # try:
+    #     attempt = 1
+    #     # 登录按钮
+    #     while True:
+    #         print("attempt: {}".format(attempt))
+    #         print("login button")
+    #         driver.find_element_by_class_name("login-btn").click()
+    #         time.sleep(SHORT_GAP)
+    #
+    #         # # 切换为密码登录
+    #         # print("switch")
+    #         # driver.find_element_by_class_name("web-login-link-list").click()
+    #         # time.sleep(SHORT_GAP)
+    #         #
+    #         # # 输入账号密码
+    #         # print("username-password")
+    #         # driver.find_element_by_class_name("web-login-normal-input__input").send_keys(14701021843)
+    #         # driver.find_element_by_class_name("web-login-button-input__input").send_keys("ty1994214")
+    #         # driver.find_element_by_xpath("//*[@id='BD_Login_Form']/div/article/article/div[1]/div[1]/div[2]/article/div[5]/button").click()
+    #         # # driver.find_element_by_class_name("web-login-button").click()
+    #         # time.sleep(LONG_GAP)
+    #
+    #         # # linux第一次用验证码登录
+    #         # driver.find_element_by_class_name("web-login-normal-input__input").send_keys(14701021843)
+    #         # driver.find_element_by_xpath("//*[@id='BD_Login_Form']/div/article/article/div[1]/div[1]/div[2]/article/div[2]/div/span").click()
+    #         # print("code sent")
+    #         # code = input("请输入验证码： ")
+    #         # time.sleep(LONG_GAP)
+    #         #
+    #         # driver.find_element_by_class_name("web-login-button-input__input").send_keys(code)
+    #         # driver.find_element_by_xpath("//*[@id='BD_Login_Form']/div/article/article/div[1]/div[1]/div[2]/article/div[4]/button").click()
+    #         # time.sleep(LONG_GAP)
+    #
+    #         print("current url: {}".format(driver.current_url))
+    #
+    #         print(driver.find_element_by_class_name("web-login-error").get_attribute("innerHTML"))
+    #
+    #         if driver.current_url == "https://studio.ixigua.com/welcome":
+    #             driver.refresh()
+    #             attempt += 1
+    #         else:
+    #             break
+    #
+    #     print("login success")
+    # except Exception as e:
+    #     print("login error")
+    #     print(e)
+    #     driver.quit()
+    #     return False
 
     # 上传过程
     try:
@@ -132,7 +193,7 @@ def upload():
         time.sleep(SHORT_GAP)
         # 选择视频类型为转载
         print("reproduce")
-        driver.find_element_by_xpath("//*[@id='js-video-list-content']/div/div[2]/div[6]/div[2]/div/div/label[2]").click()
+        driver.find_element_by_xpath("//*[@id='js-video-list-content']/div/div[2]/div[6]/div[2]/div/div/label[2]/span/div").click()
         time.sleep(SHORT_GAP)
         # 展开更多选项
         print("more options")
@@ -189,11 +250,11 @@ def upload():
             driver.find_element_by_xpath("/html/body/div[5]/div[2]/div/div[3]/div[1]/div[3]/div[2]/div[2]/div/input").send_keys(r"C:\Users\Lemon_Tyd\Videos\T1 vs SMG - SEA GROUP STAGE - BTS PRO SERIES 7 DOTA 2-mfc7QPBberc.en.srt")
             time.sleep(LONG_GAP)
         else:
-            driver.find_element_by_xpath("/html/body/div[5]/div[2]/div/div[3]/div[1]/div[3]/div[2]/div[2]/div/input").send_keys(get_en_sub())
+            driver.find_element_by_xpath("/html/body/div[4]/div[2]/div/div[3]/div[1]/div[3]/div[2]/div[2]/div/input").send_keys(get_en_sub())
             time.sleep(LONG_GAP)
             driver.find_element_by_class_name("add-caption-modal__button").click()
             time.sleep(SHORT_GAP)
-            driver.find_element_by_xpath("/html/body/div[5]/div[2]/div/div[3]/div[1]/div[3]/div[1]/div[2]/div/input").send_keys(get_zh_sub())
+            driver.find_element_by_xpath("/html/body/div[4]/div[2]/div/div[3]/div[1]/div[3]/div[1]/div[2]/div/input").send_keys(get_zh_sub())
             time.sleep(LONG_GAP)
         # 确认上传字幕
         print("confirm subtitle")
@@ -261,6 +322,10 @@ def download(youtube_url):
             'writethumbnail': True,
             # 最佳视频+最佳音频（ffmpeg自动合并）
             'format': "bestvideo+bestaudio",
+            # 第三方下载工具
+            'external_downloader': "aria2c",
+            # 第三方下载工具参数，16线程，指定块大小1M
+            'external_downloader_args': ["-x16", "-k1M"],
             # 视频信息json文件，用于获取id和title等
             'writeinfojson': True,
             # 保存自动字幕
