@@ -42,7 +42,9 @@ target_youtube_user = [
 
 no_sub_flag = False
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')
+LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
+DATE_FORMAT = "%m/%d/%Y %H:%M:%S %p"
+logging.basicConfig(filename="log.log", level=logging.INFO, format=LOG_FORMAT, datefmt=DATE_FORMAT)
 
 
 def upload():
@@ -132,7 +134,7 @@ def upload():
         if LOCAL_TEST:
             title_input.send_keys("测试标题123")
         else:
-            title_input.send_keys(get_title())
+            title_input.send_keys(rename(get_title()))
 
         # 上传封面按钮
         logging.info("thumbnail button")
@@ -178,7 +180,7 @@ def upload():
 
         # 输入简介
         logging.info("description")
-        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.visibility_of_element_located((By.XPATH, "//*[@id='js-video-list-content']/div/div[2]/div[8]/div[2]/div[2]/div/div/div/div/div/div[2]/div/div/div/div"))).send_keys("DOTA2精彩视频")
+        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.visibility_of_element_located((By.XPATH, "//*[@id='js-video-list-content']/div/div[2]/div[8]/div[2]/div[2]/div/div/div/div/div/div[2]/div/div/div/div"))).send_keys("DOTA2精彩视频" + "\n" + get_title())
 
         # 互动贴纸按钮
         logging.info("paster")
@@ -267,7 +269,7 @@ def get_title():
         if file.endswith(".info.json"):
             with open((os.getcwd() + '/' + file), "r") as f:
                 info = json.load(f)
-            return rename(info['title'])
+            return info['title']
 
 
 def get_video():
@@ -279,7 +281,7 @@ def get_video():
 
 def get_thumbnail():
     for file in os.listdir(os.getcwd()):
-        if file.endswith(".jpg"):
+        if file.endswith(".jpg") or file.endswith(".webp"):
             thumbnail_path = os.getcwd() + '/' + file
             return thumbnail_path
 
@@ -352,9 +354,7 @@ def vtt2srt():
     except:
         logging.info("vtt to srt error")
         return False
-    if sub_exist_flag:
-        logging.info("vtt 2 srt success")
-    else:
+    if not sub_exist_flag:
         logging.info("no subtitles")
     return True
     # try:
@@ -406,16 +406,16 @@ def check_download_complete():
     for file in os.listdir(os.getcwd()):
         if file.endswith(".mp4"):
             video_flag = True
-            logging.info("mp4: " + file)
-        elif file.endswith(".jpg"):
+            logging.info("video: " + file)
+        elif file.endswith(".jpg") or file.endswith(".webp"):
             thumbnail_flag = True
-            logging.info("jpg: " + file)
+            logging.info("thumbnail: " + file)
         elif file.endswith(".en.srt"):
             en_subtitle_flag = True
-            logging.info("en.srt: " + file)
+            logging.info("en-srt: " + file)
         elif file.endswith(".zh-Hans.srt"):
             zh_subtitle_flag = True
-            logging.info("zh.srt: " + file)
+            logging.info("zh-srt: " + file)
         elif file.endswith(".info.json"):
             info_flag = True
             logging.info("json: " + file)
@@ -440,18 +440,24 @@ def download_procedure(video_id):
     global no_sub_flag
     no_sub_flag = False
     video_url = "https://www.youtube.com/watch?v={}".format(video_id)
+    logging.info("start download {}".format(video_id))
     download_result = download(video_url)
     if download_result is False:
         logging.error("download error")
         return False
+    logging.info("download success {}".format(video_id))
+    logging.info("start vtt2srt {}".format(video_id))
     vtt2srt_result = vtt2srt()
     if vtt2srt_result is False:
         logging.error("vtt 2 srt error")
         return False
+    logging.info("vtt2srt success {}".format(video_id))
+    logging.info("start check download complete {}".format(video_id))
     download_complete_result = check_download_complete()
     if not download_complete_result:
         logging.error("download incomplete, something is missing")
         return False
+    logging.info("check download success {}".format(video_id))
     return True
 
 
@@ -473,7 +479,7 @@ def upload_procedure():
 # 清理流程
 def delete_procedure():
     for file in os.listdir(os.getcwd()):
-        if not (file.endswith(".py") or file.endswith(".txt") or file == "chromedriver"):
+        if not (file.endswith(".py") or file.endswith(".txt") or file.endswith(".log") or file == "chromedriver"):
             os.remove(os.getcwd() + "/" + file)
     logging.info("delete finish")
 
@@ -505,7 +511,7 @@ if __name__ == "__main__":
 
     # if LOCAL_TEST:
     #     upload()
-
+    logging.info("job start")
     while True:
         for username in target_youtube_user:
             video_list = find_all(username)
@@ -514,20 +520,20 @@ if __name__ == "__main__":
                     start_time = time.time()
                     download_success = download_procedure(video_id)
                     if not download_success:
-                        logging.error("download fail")
-                        notify_procedure("下载youtube账户：'{}' 视频 '{}' 失败，id为：{}，请检查！".format(username, get_title(), video_id))
+                        logging.error("download fail {}".format(video_id))
+                        notify_procedure("下载youtube账户：'{}'\n\n视频：'{}'\n\n失败\n\nid为：{}\n\n请检查！".format(username, get_title(), video_id))
                         delete_procedure()
                         sys.exit(1)
                     upload_success = upload_procedure()
                     if not upload_success:
-                        logging.error("upload fail")
-                        notify_procedure("上传youtube账户：'{}' 视频 '{}' 失败，id为：{}，请检查！".format(username, get_title(), video_id))
+                        logging.error("upload fail {}".format(video_id))
+                        notify_procedure("上传youtube账户：'{}'\n\n视频：'{}'\n\n失败\n\nid为：{}\n\n请检查！".format(username, get_title(), video_id))
                         delete_procedure()
                         sys.exit(1)
                     history = open("history.txt", "a+")
                     history.write(str(video_id) + "\n")
                     history.close()
                     end_time = time.time()
-                    notify_procedure("下载并上传youtube账户：'{}' 视频 '{}' 成功，id为：{}，共耗时 {}秒".format(username, get_title(), video_id, end_time - start_time))
+                    notify_procedure("下载并上传youtube账户：'{}'\n\n视频：'{}'\n\n成功\n\nid为：{}\n\n共耗时 {}秒".format(username, get_title(), video_id, end_time - start_time))
                     delete_procedure()
             time.sleep(LONG_GAP)
