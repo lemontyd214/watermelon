@@ -327,8 +327,8 @@ def download(youtube_url):
             ydl.download([youtube_url])
     except Exception as e:
         logging.info(e)
-        return 0
-    return 1
+        return False
+    return True
 
 
 def vtt2srt():
@@ -437,14 +437,23 @@ def rename(video_title):
 
 # 下载流程
 def download_procedure(video_id):
-    global no_sub_flag
-    no_sub_flag = False
-    video_url = "https://www.youtube.com/watch?v={}".format(video_id)
-    logging.info("start download {}".format(video_id))
-    download_result = download(video_url)
-    if download_result is False:
-        logging.error("download error")
-        return False
+    download_attempt = 1
+    while True:
+        if download_attempt > 5:
+            logging.error("download fail after 5 attempts")
+            return False
+        global no_sub_flag
+        no_sub_flag = False
+        video_url = "https://www.youtube.com/watch?v={}".format(video_id)
+        logging.info("start download {}".format(video_id))
+        download_result = download(video_url)
+        if download_result is False:
+            logging.error("download error attempt {}".format(download_attempt))
+            download_attempt += 1
+            delete_procedure()
+            time.sleep(LONG_GAP)
+        else:
+            break
     logging.info("download success {}".format(video_id))
     logging.info("start vtt2srt {}".format(video_id))
     vtt2srt_result = vtt2srt()
@@ -466,7 +475,7 @@ def upload_procedure():
     upload_attempt = 1
     while True:
         if upload_attempt > 5:
-            notify_procedure("upload fail after 3 attempts")
+            logging.error("upload fail after 5 attempts")
             return False
         upload_result = upload()
         if upload_result:
@@ -521,13 +530,15 @@ if __name__ == "__main__":
                     download_success = download_procedure(video_id)
                     if not download_success:
                         logging.error("download fail {}".format(video_id))
-                        notify_procedure("下载youtube账户：'{}'\n\n视频：'{}'\n\n失败\n\nid为：{}\n\n请检查！".format(username, get_title(), video_id))
+                        end_time = time.time()
+                        notify_procedure("下载youtube账户：'{}'\n\n视频：'{}'\n\n失败\n\nid为：{}\n\n共耗时 {}秒\n\n请检查！".format(username, get_title(), video_id, end_time - start_time))
                         delete_procedure()
                         sys.exit(1)
                     upload_success = upload_procedure()
                     if not upload_success:
                         logging.error("upload fail {}".format(video_id))
-                        notify_procedure("上传youtube账户：'{}'\n\n视频：'{}'\n\n失败\n\nid为：{}\n\n请检查！".format(username, get_title(), video_id))
+                        end_time = time.time()
+                        notify_procedure("上传youtube账户：'{}'\n\n视频：'{}'\n\n失败\n\nid为：{}\n\n共耗时 {}秒\n\n请检查！".format(username, get_title(), video_id, end_time - start_time))
                         delete_procedure()
                         sys.exit(1)
                     history = open("history.txt", "a+")
