@@ -23,7 +23,8 @@ mail_user = "dota2daily"  # 用户名
 mail_pass = "IMXEZHFKBGMLNFCW"  # 口令
 
 sender = 'dota2daily@163.com'
-receivers = ['931770556@qq.com', '525370782@qq.com']  # 接收邮件，可设置为你的QQ邮箱或者其他邮箱
+# receivers = ['931770556@qq.com', '525370782@qq.com']  # 接收邮件，可设置为你的QQ邮箱或者其他邮箱
+receivers = ['931770556@qq.com']  # 接收邮件，可设置为你的QQ邮箱或者其他邮箱
 
 if LOCAL_TEST:
     LONG_GAP = 20
@@ -44,8 +45,8 @@ no_sub_flag = False
 
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 DATE_FORMAT = "%m/%d/%Y %H:%M:%S %p"
-logging.basicConfig(filename="log.log", level=logging.INFO, format=LOG_FORMAT, datefmt=DATE_FORMAT)
-# logging.basicConfig(level=logging.INFO, format=LOG_FORMAT, datefmt=DATE_FORMAT)
+# logging.basicConfig(filename="log.log", level=logging.INFO, format=LOG_FORMAT, datefmt=DATE_FORMAT)
+logging.basicConfig(level=logging.INFO, format=LOG_FORMAT, datefmt=DATE_FORMAT)
 
 
 # 上传视频
@@ -237,12 +238,6 @@ def upload():
             else:
                 zh_sub.send_keys(get_zh_sub())
 
-            # 等待中文字幕上传完毕
-            logging.info("wait zh-sub upload")
-            zh_sub_wait = WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.presence_of_element_located((By.XPATH, "/html/body/div[5]/div[2]/div/div[3]/div[1]/div[3]/div[1]/div[2]/div/span")))
-            if zh_sub_wait.get_attribute("innerHTML") == get_zh_sub_name():
-                logging.info("zh-sub upload success")
-
             # 添加第二个字幕
             logging.info("add 2nd subtitle")
             WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.CLASS_NAME, "add-caption-modal__button"))).click()
@@ -254,12 +249,6 @@ def upload():
                 en_sub.send_keys(r"C:\Users\Lemon_Tyd\Videos\T1 vs SMG - SEA GROUP STAGE - BTS PRO SERIES 7 DOTA 2-mfc7QPBberc.en.srt")
             else:
                 en_sub.send_keys(get_en_sub())
-
-            # 等待英文字幕上传完毕
-            logging.info("wait en-sub upload")
-            en_sub_wait = WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.presence_of_element_located((By.XPATH, "/html/body/div[5]/div[2]/div/div[3]/div[1]/div[3]/div[2]/div[2]/div/span")))
-            if en_sub_wait.get_attribute("innerHTML") == get_en_sub_name():
-                logging.info("en-sub upload success")
 
             # 确认上传字幕
             logging.info("confirm subtitle")
@@ -335,20 +324,6 @@ def get_zh_sub():
         if file.endswith(".zh-Hans.srt"):
             zh_sub_path = os.getcwd() + '/' + file
             return zh_sub_path
-
-
-#获取中文字幕文件名
-def get_zh_sub_name():
-    for file in os.listdir(os.getcwd()):
-        if file.endswith(".zh-Hans.srt"):
-            return file
-
-
-#获取英文字幕文件名
-def get_en_sub_name():
-    for file in os.listdir(os.getcwd()):
-        if file.endswith(".en.srt"):
-            return file
 
 
 # 下载视频+封面+字幕
@@ -586,13 +561,17 @@ def update_subtitle(video_id, ixigua_id):
 
         # 中文字幕
         logging.info("zh-subtitle")
+        logging.info(get_zh_sub())
         WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.presence_of_element_located((By.XPATH, "/html/body/div[4]/div[2]/div/div[3]/div[1]/div[3]/div[1]/div[2]/div/input"))).send_keys(get_zh_sub())
 
-        # 等待中文字幕上传完毕
-        logging.info("wait zh-sub upload")
-        zh_sub_wait = WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.presence_of_element_located((By.XPATH, "/html/body/div[4]/div[2]/div/div[3]/div[1]/div[3]/div[1]/div[2]/div/span")))
-        if zh_sub_wait.get_attribute("innerHTML") == get_zh_sub_name():
-            logging.info("zh-sub upload success")
+        time.sleep(SHORT_GAP)
+        # print(driver.page_source)
+        logging.info("wait subtitle upload")
+        print(driver.find_element_by_xpath("/html/body/div[4]/div[2]/div/div[3]/div[1]/div[3]/div[1]/div[2]/div/span"))
+        result = WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.presence_of_element_located((By.XPATH, "/html/body/div[4]/div[2]/div/div[3]/div[1]/div[3]/div[1]/div[2]/div/span")))
+        print(result.get_attribute('innerHTML'))
+        print(WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.text_to_be_present_in_element((By.XPATH, "/html/body/div[4]/div[2]/div/div[3]/div[1]/div[3]/div[1]/div[2]/div/span"), get_zh_sub())))
+
 
         # 添加第二个字幕
         logging.info("add 2nd subtitle")
@@ -600,25 +579,25 @@ def update_subtitle(video_id, ixigua_id):
 
         # 英文字幕
         logging.info("en-subtitle")
+        logging.info(get_en_sub())
         WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.presence_of_element_located((By.XPATH, "/html/body/div[4]/div[2]/div/div[3]/div[1]/div[3]/div[2]/div[2]/div/input"))).send_keys(get_en_sub())
-
-        # 等待英文字幕上传完毕
-        logging.info("wait en-sub upload")
-        en_sub_wait = WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.presence_of_element_located((By.XPATH, "/html/body/div[4]/div[2]/div/div[3]/div[1]/div[3]/div[2]/div[2]/div/span")))
-        if en_sub_wait.get_attribute("innerHTML") == get_en_sub_name():
-            logging.info("en-sub upload success")
 
         # 确认上传字幕
         logging.info("confirm subtitle")
-        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.CLASS_NAME, "byte-btn-primary"))).click()
+        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "/html/body/div[4]/div[2]/div/div[3]/div[2]/button[2]"))).click()
 
         # 确认修改
-        logging.info("confirm update")
-        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='js-submit-0']/button"))).click()
+        # logging.info("confirm update")
+        # WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='js-submit-0']/button"))).click()
+
+        # print(driver.page_source)
+        # time.sleep(300)
 
         # 等待页面刷新
         logging.info("check webpage handler")
+        logging.info("current url: {}".format(driver.current_url))
         if WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.url_to_be("https://studio.ixigua.com/content?tab=video")):
+            logging.info("current url: {}".format(driver.current_url))
             logging.info("update subtitle success for {} : {}".format(ixigua_id, video_id))
         else:
             raise Exception
@@ -813,36 +792,31 @@ if __name__ == "__main__":
         sys.exit(0)
     logging.info("job start")
     while True:
-        for username in target_youtube_user:
-            video_list = find_all(username)
-            for video_id in video_list:
-                if not check_uploaded(video_id):
-                    start_time = time.time()
-                    download_success = download_procedure(video_id)
-                    if not download_success:
-                        logging.error("download fail {}".format(video_id))
-                        end_time = time.time()
-                        notify_procedure("下载youtube账户：'{}'\n\n视频：'{}'\n\n失败\n\nid为：{}\n\n共耗时 {}秒\n\n请检查！".format(username, get_title(), video_id, end_time - start_time))
-                        delete_procedure()
-                        sys.exit(1)
-                    upload_success = upload_procedure()
-                    if not upload_success:
-                        logging.error("upload fail {}".format(video_id))
-                        end_time = time.time()
-                        notify_procedure("上传youtube账户：'{}'\n\n视频：'{}'\n\n失败\n\nid为：{}\n\n共耗时 {}秒\n\n请检查！".format(username, get_title(), video_id, end_time - start_time))
-                        delete_procedure()
-                        sys.exit(1)
-                    history = open("history.txt", "a+")
-                    history.write(str(video_id) + "\n")
-                    history.close()
-                    end_time = time.time()
-                    notify_procedure("下载并上传youtube账户：'{}'\n\n视频：'{}'\n\n成功\n\nid为：{}\n\n共耗时 {}秒".format(username, get_title(), video_id, end_time - start_time))
-                    delete_procedure()
-            time.sleep(LONG_GAP)
+        # for username in target_youtube_user:
+        #     video_list = find_all(username)
+        #     for video_id in video_list:
+        #         if not check_uploaded(video_id):
+        #             start_time = time.time()
+        #             download_success = download_procedure(video_id)
+        #             if not download_success:
+        #                 logging.error("download fail {}".format(video_id))
+        #                 end_time = time.time()
+        #                 notify_procedure("下载youtube账户：'{}'\n\n视频：'{}'\n\n失败\n\nid为：{}\n\n共耗时 {}秒\n\n请检查！".format(username, get_title(), video_id, end_time - start_time))
+        #                 delete_procedure()
+        #                 sys.exit(1)
+        #             upload_success = upload_procedure()
+        #             if not upload_success:
+        #                 logging.error("upload fail {}".format(video_id))
+        #                 end_time = time.time()
+        #                 notify_procedure("上传youtube账户：'{}'\n\n视频：'{}'\n\n失败\n\nid为：{}\n\n共耗时 {}秒\n\n请检查！".format(username, get_title(), video_id, end_time - start_time))
+        #                 delete_procedure()
+        #                 sys.exit(1)
+        #             history = open("history.txt", "a+")
+        #             history.write(str(video_id) + "\n")
+        #             history.close()
+        #             end_time = time.time()
+        #             notify_procedure("下载并上传youtube账户：'{}'\n\n视频：'{}'\n\n成功\n\nid为：{}\n\n共耗时 {}秒".format(username, get_title(), video_id, end_time - start_time))
+        #             delete_procedure()
+        #     time.sleep(LONG_GAP)
         # 查询未下载字幕subtitle_to_add列表，如果有字幕可下载则进行处理
-        update_subtitle_result = update_subtitle_procedure()
-        if update_subtitle_result is False:
-            logging.error("update subtitle fail")
-            notify_procedure("更新字幕失败，请检查！")
-            delete_procedure()
-            sys.exit(1)
+        update_subtitle_procedure()
