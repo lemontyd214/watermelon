@@ -45,8 +45,10 @@ no_sub_flag = False
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 DATE_FORMAT = "%m/%d/%Y %H:%M:%S %p"
 logging.basicConfig(filename="log.log", level=logging.INFO, format=LOG_FORMAT, datefmt=DATE_FORMAT)
+# logging.basicConfig(level=logging.INFO, format=LOG_FORMAT, datefmt=DATE_FORMAT)
 
 
+# 上传视频
 def upload():
     if LOCAL_TEST:
         driver = webdriver.Chrome()
@@ -164,7 +166,7 @@ def upload():
         WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "/html/body/div[5]/div/div[2]/div/div[2]/button[2]"))).click()
 
         # 确认上传封面后需要一点时间让界面消失、更新
-        time.sleep(SHORT_GAP)
+        time.sleep(SHORT_GAP * 2)
 
         # 选择视频类型为转载
         logging.info("reproduce")
@@ -180,7 +182,10 @@ def upload():
 
         # 输入简介
         logging.info("description")
-        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.visibility_of_element_located((By.XPATH, "//*[@id='js-video-list-content']/div/div[2]/div[8]/div[2]/div[2]/div/div/div/div/div/div[2]/div/div/div/div"))).send_keys("DOTA2精彩视频" + "\n" + get_title())
+        if LOCAL_TEST:
+            WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.visibility_of_element_located((By.XPATH, "//*[@id='js-video-list-content']/div/div[2]/div[8]/div[2]/div[2]/div/div/div/div/div/div[2]/div/div/div/div"))).send_keys("DOTA2精彩视频")
+        else:
+            WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.visibility_of_element_located((By.XPATH, "//*[@id='js-video-list-content']/div/div[2]/div[8]/div[2]/div[2]/div/div/div/div/div/div[2]/div/div/div/div"))).send_keys("DOTA2精彩视频" + "\n" + get_title())
 
         # 互动贴纸按钮
         logging.info("paster")
@@ -216,7 +221,7 @@ def upload():
         WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "/html/body/div[5]/div[2]/div/div[3]/div[2]/div/div[3]/div[2]/div/div[2]"))).click()
 
         # 确认贴纸后需要一点时间让界面消失、刷新
-        time.sleep(SHORT_GAP)
+        time.sleep(SHORT_GAP * 2)
 
         global no_sub_flag
         if no_sub_flag is False:
@@ -232,6 +237,12 @@ def upload():
             else:
                 zh_sub.send_keys(get_zh_sub())
 
+            # 等待中文字幕上传完毕
+            logging.info("wait zh-sub upload")
+            zh_sub_wait = WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.presence_of_element_located((By.XPATH, "/html/body/div[5]/div[2]/div/div[3]/div[1]/div[3]/div[1]/div[2]/div/span")))
+            if zh_sub_wait.get_attribute("innerHTML") == get_zh_sub_name():
+                logging.info("zh-sub upload success")
+
             # 添加第二个字幕
             logging.info("add 2nd subtitle")
             WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.CLASS_NAME, "add-caption-modal__button"))).click()
@@ -244,6 +255,12 @@ def upload():
             else:
                 en_sub.send_keys(get_en_sub())
 
+            # 等待英文字幕上传完毕
+            logging.info("wait en-sub upload")
+            en_sub_wait = WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.presence_of_element_located((By.XPATH, "/html/body/div[5]/div[2]/div/div[3]/div[1]/div[3]/div[2]/div[2]/div/span")))
+            if en_sub_wait.get_attribute("innerHTML") == get_en_sub_name():
+                logging.info("en-sub upload success")
+
             # 确认上传字幕
             logging.info("confirm subtitle")
             WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.CLASS_NAME, "byte-btn-primary"))).click()
@@ -255,6 +272,21 @@ def upload():
         # 点击确认上传
         WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='js-submit-0']/button"))).click()
         logging.info("upload success")
+
+        # 确认页面跳转
+        logging.info("check webpage handler")
+        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.url_to_be("https://studio.ixigua.com/content?tab=video&investigation_param=cover_edited"))
+
+        # 如果没有字幕，放进subtitle_to_add列表中，后面如果有字幕可以下载则更新上去
+        if no_sub_flag:
+            WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='contentMain']/div/div[4]/div/div[1]/div/div[1]"))).click()
+            logging.info(driver.current_url)
+            index = driver.current_url.find("gid=")
+            ixigua_video_id = driver.current_url[index + 4:index + 23]
+            subtitle_to_add = open("subtitle_to_add.txt", "a+")
+            subtitle_to_add.write(str(ixigua_video_id) + "," + str(video_id) + "\n")
+            subtitle_to_add.close()
+            logging.info("video_id: {}, ixigua_id: {} added to subtitle_to_add.txt".format(video_id, ixigua_video_id))
     except Exception as e:
         logging.error("upload error")
         logging.error(e)
@@ -264,6 +296,7 @@ def upload():
     return True
 
 
+# 从json文件中获取视频title
 def get_title():
     for file in os.listdir(os.getcwd()):
         if file.endswith(".info.json"):
@@ -272,6 +305,7 @@ def get_title():
             return info['title']
 
 
+# 获取视频文件路径
 def get_video():
     for file in os.listdir(os.getcwd()):
         if file.endswith(".mp4"):
@@ -279,6 +313,7 @@ def get_video():
             return video_path
 
 
+# 获取封面图片文件路径
 def get_thumbnail():
     for file in os.listdir(os.getcwd()):
         if file.endswith(".jpg") or file.endswith(".webp"):
@@ -286,6 +321,7 @@ def get_thumbnail():
             return thumbnail_path
 
 
+# 获取英文字幕文件路径
 def get_en_sub():
     for file in os.listdir(os.getcwd()):
         if file.endswith(".en.srt"):
@@ -293,6 +329,7 @@ def get_en_sub():
             return en_sub_path
 
 
+# 获取中文字幕文件路径
 def get_zh_sub():
     for file in os.listdir(os.getcwd()):
         if file.endswith(".zh-Hans.srt"):
@@ -300,6 +337,21 @@ def get_zh_sub():
             return zh_sub_path
 
 
+#获取中文字幕文件名
+def get_zh_sub_name():
+    for file in os.listdir(os.getcwd()):
+        if file.endswith(".zh-Hans.srt"):
+            return file
+
+
+#获取英文字幕文件名
+def get_en_sub_name():
+    for file in os.listdir(os.getcwd()):
+        if file.endswith(".en.srt"):
+            return file
+
+
+# 下载视频+封面+字幕
 def download(youtube_url):
     try:
         ydl_opts = {
@@ -331,6 +383,7 @@ def download(youtube_url):
     return True
 
 
+# 将vtt字幕文件转化为srt字幕文件
 def vtt2srt():
     try:
         sub_exist_flag = False
@@ -368,6 +421,7 @@ def vtt2srt():
     # return True
 
 
+# 获取某个youtube用户的全部视频列表
 def find_all(username):
     id_list = []
     sub = "watch?v="
@@ -386,6 +440,7 @@ def find_all(username):
         sys.exit(1)
 
 
+# 检查某个视频id是否已经上传过并记录在history.txt中
 def check_uploaded(video_id):
     upload_history = open("history.txt", "a+")
     upload_history.seek(0)
@@ -396,6 +451,7 @@ def check_uploaded(video_id):
     return False
 
 
+# 检查下载是否完整，包含视频+封面图片+json文件
 def check_download_complete():
     video_flag = False
     thumbnail_flag = False
@@ -424,6 +480,7 @@ def check_download_complete():
     return (video_flag and thumbnail_flag and info_flag)
 
 
+# 将title整理为不超过30字符的新名字
 def rename(video_title):
     name_result = ""
     video_title_split = video_title.split(" ")
@@ -435,12 +492,153 @@ def rename(video_title):
     return name_result
 
 
+# 下载字幕文件
+def download_subtitle(video_id):
+    youtube_url = "https://www.youtube.com/watch?v={}".format(video_id)
+    try:
+        ydl_opts = {
+            # 第三方下载工具
+            'external_downloader': "aria2c",
+            # 第三方下载工具参数，16线程，指定块大小1M
+            'external_downloader_args': ["-x16", "-k1M"],
+            # 保存自动字幕
+            'writeautomaticsub': True,
+            # 选择字幕格式
+            'subtitlesformat': 'best/srt',
+            # 中英字幕
+            'subtitleslangs': ['en', 'zh-Hans'],
+            # 是否下载视频文件
+            'skip_download': True
+        }
+
+        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([youtube_url])
+    except Exception as e:
+        logging.info(e)
+        return False
+    return True
+
+
+# 更新已上传视频的字幕文件
+def update_subtitle(video_id, ixigua_id):
+    desired_capabilities = DesiredCapabilities.CHROME
+    desired_capabilities["pageLoadStrategy"] = "none"
+    options = webdriver.ChromeOptions()
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--window-size=1920,3000")
+    options.add_argument("--start-maximized")
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--disable-default-apps")
+    options.add_argument("--disable-sync")
+    options.add_argument("--disable-translate")
+    driver = webdriver.Chrome(options=options)
+
+    # 开始更新字幕
+    logging.info("start update subtitle")
+    time.sleep(SHORT_GAP)
+    try:
+        # 创作平台主页
+        logging.info("open homepage")
+        driver.get("https://studio.ixigua.com")
+        time.sleep(SHORT_GAP)
+        logging.info("init success")
+
+        # 清除旧的cookie
+        logging.info("clear cookies")
+        driver.delete_all_cookies()
+
+        # 读取cookie
+        logging.info("read cookies")
+        with open('cookies.txt', 'r') as f:
+            # 使用json读取cookies 注意读取的是文件 所以用load而不是loads
+            cookies_list = json.load(f)
+            for cookie in cookies_list:
+                cookie['expiry'] = 2000000000
+                driver.add_cookie(cookie)
+
+        # 重定向，完成登录
+        logging.info("redirect")
+        driver.get("https://studio.ixigua.com/upload?gid={}&from=switch_page&article_type=1#edit_video".format(ixigua_id))
+        time.sleep(SHORT_GAP)
+        if driver.current_url == "https://studio.ixigua.com/upload?gid={}&from=switch_page&article_type=1#edit_video".format(ixigua_id):
+            logging.info("cookie login success")
+        else:
+            logging.error("cookie login fail")
+            notify_procedure("cookie登录失败，请手动更新cookie")
+            driver.quit()
+            return False
+
+        # 开始上传更新字幕文件
+        # 展开更多选项
+        logging.info("more options")
+        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.visibility_of_element_located((By.XPATH, "//*[@id='js-video-list-content']/div/div/div[9]/div"))).click()
+
+        # 向下滚动滚动条
+        logging.info("scroll down")
+        driver.execute_script("window.scrollBy(0,1000)")
+
+        # 点击上传字幕
+        logging.info("upload subtitle")
+        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='js-video-list-content']/div/div/div[9]/div[7]/div[2]/div/div/span[1]"))).click()
+
+        # 中文字幕
+        logging.info("zh-subtitle")
+        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.presence_of_element_located((By.XPATH, "/html/body/div[4]/div[2]/div/div[3]/div[1]/div[3]/div[1]/div[2]/div/input"))).send_keys(get_zh_sub())
+
+        # 等待中文字幕上传完毕
+        logging.info("wait zh-sub upload")
+        zh_sub_wait = WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.presence_of_element_located((By.XPATH, "/html/body/div[4]/div[2]/div/div[3]/div[1]/div[3]/div[1]/div[2]/div/span")))
+        if zh_sub_wait.get_attribute("innerHTML") == get_zh_sub_name():
+            logging.info("zh-sub upload success")
+
+        # 添加第二个字幕
+        logging.info("add 2nd subtitle")
+        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "/html/body/div[4]/div[2]/div/div[3]/div[1]/div[3]/div[2]/div"))).click()
+
+        # 英文字幕
+        logging.info("en-subtitle")
+        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.presence_of_element_located((By.XPATH, "/html/body/div[4]/div[2]/div/div[3]/div[1]/div[3]/div[2]/div[2]/div/input"))).send_keys(get_en_sub())
+
+        # 等待英文字幕上传完毕
+        logging.info("wait en-sub upload")
+        en_sub_wait = WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.presence_of_element_located((By.XPATH, "/html/body/div[4]/div[2]/div/div[3]/div[1]/div[3]/div[2]/div[2]/div/span")))
+        if en_sub_wait.get_attribute("innerHTML") == get_en_sub_name():
+            logging.info("en-sub upload success")
+
+        # 确认上传字幕
+        logging.info("confirm subtitle")
+        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.CLASS_NAME, "byte-btn-primary"))).click()
+
+        # 确认修改
+        logging.info("confirm update")
+        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='js-submit-0']/button"))).click()
+
+        # 等待页面刷新
+        logging.info("check webpage handler")
+        if WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.url_to_be("https://studio.ixigua.com/content?tab=video")):
+            logging.info("update subtitle success for {} : {}".format(ixigua_id, video_id))
+        else:
+            raise Exception
+
+    except Exception as e:
+        logging.error("update error")
+        logging.error(e)
+        driver.quit()
+        return False
+    driver.quit()
+    return True
+
+
 # 下载流程
 def download_procedure(video_id):
+    # 尝试下载所有文件，总共5次重试机会
     download_attempt = 1
     while True:
         if download_attempt > 5:
-            logging.error("download fail after 5 attempts")
+            logging.error("download fail after 5 attempts for {}".format(video_id))
             return False
         global no_sub_flag
         no_sub_flag = False
@@ -455,12 +653,16 @@ def download_procedure(video_id):
         else:
             break
     logging.info("download success {}".format(video_id))
+
+    # 将vtt字幕文件转换为srt格式
     logging.info("start vtt2srt {}".format(video_id))
     vtt2srt_result = vtt2srt()
     if vtt2srt_result is False:
         logging.error("vtt 2 srt error")
         return False
     logging.info("vtt2srt success {}".format(video_id))
+
+    # 检查是否全部下载成功
     logging.info("start check download complete {}".format(video_id))
     download_complete_result = check_download_complete()
     if not download_complete_result:
@@ -472,6 +674,7 @@ def download_procedure(video_id):
 
 # 上传流程
 def upload_procedure():
+    # 尝试上传，总共5次重试机会
     upload_attempt = 1
     while True:
         if upload_attempt > 5:
@@ -487,6 +690,7 @@ def upload_procedure():
 
 # 清理流程
 def delete_procedure():
+    # 删除下载产生的文件，保留.py .txt .log和chromedriver
     for file in os.listdir(os.getcwd()):
         if not (file.endswith(".py") or file.endswith(".txt") or file.endswith(".log") or file == "chromedriver"):
             os.remove(os.getcwd() + "/" + file)
@@ -495,6 +699,7 @@ def delete_procedure():
 
 # 通知流程
 def notify_procedure(result):
+    # 将下载、上传结果通过邮件通知
     for receiver in receivers:
         message = MIMEText(result, 'plain', 'utf-8')
         message['From'] = sender
@@ -516,10 +721,96 @@ def notify_procedure(result):
     return True
 
 
+# 更新字幕流程
+def update_subtitle_procedure():
+    # 读取所有待添加字幕的视频id列表
+    sub_to_add_file = open("subtitle_to_add.txt", "a+")
+    sub_to_add_file.seek(0)
+    sub_list = sub_to_add_file.readlines()
+    sub_list_left = sub_list
+    sub_to_add_file.close()
+    sub_add_success_list = []
+    if len(sub_list) > 0:
+        for id_pair in sub_list:
+            ixigua_id = id_pair.split(",")[0]
+            video_id = id_pair.split(",")[1][0:-1]
+
+            # 开始下载字幕文件
+            logging.info("start download and update subtitle for {} : {}".format(video_id, ixigua_id))
+            logging.info("start download subtitle for {}".format(video_id))
+            download_sub_attempt = 1
+            while True:
+                if download_sub_attempt > 5:
+                    logging.error("download subtitle fail after 5 attempts for {}".format(video_id))
+                    return False
+                download_sub_result = download_subtitle(video_id)
+                if download_sub_result is False:
+                    logging.error("download subtitle fail attempt {}".format(download_sub_attempt))
+                    delete_procedure()
+                    download_sub_attempt += 1
+                    time.sleep(SHORT_GAP)
+                else:
+                    logging.info("download subtitle success for {}".format(video_id))
+                    break
+
+            # 将vtt字幕文件转换为srt格式
+            logging.info("start vtt2srt {}".format(video_id))
+            vtt2srt_result = vtt2srt()
+            if vtt2srt_result is False:
+                logging.error("vtt 2 srt error")
+                return False
+            logging.info("vtt2srt success {}".format(video_id))
+
+            # 检查字幕文件是否存在
+            en_subtitle_flag = False
+            zh_subtitle_flag = False
+            for file in os.listdir(os.getcwd()):
+                if file.endswith(".en.srt"):
+                    en_subtitle_flag = True
+                    logging.info("en-srt: " + file)
+                elif file.endswith(".zh-Hans.srt"):
+                    zh_subtitle_flag = True
+                    logging.info("zh-srt: " + file)
+            if en_subtitle_flag and zh_subtitle_flag:
+                logging.info("download subtitle success for {}".format(video_id))
+            else:
+                logging.error("no subtitle downloaded for {}".format(video_id))
+                delete_procedure()
+                continue
+
+            # 开始更新字幕文件
+            logging.info("start update subtitle for {}".format(ixigua_id))
+            update_attempt = 1
+            while True:
+                if update_attempt > 5:
+                    logging.error("update subtitle fail after 5 attempts for {}".format(ixigua_id))
+                    return False
+                update_subtitle_result = update_subtitle(video_id, ixigua_id)
+                if update_subtitle_result is False:
+                    logging.error("update subtitle fail attempt {}".format(update_attempt))
+                    update_attempt += 1
+                    time.sleep(SHORT_GAP)
+                else:
+                    logging.info("update subtitle success for {}".format(ixigua_id))
+                    break
+            logging.info("download and update subtitle for {} : {} success".format(video_id, ixigua_id))
+            sub_list_left.remove(id_pair)
+            sub_add_success_list.append(id_pair)
+            delete_procedure()
+            time.sleep(SHORT_GAP)
+        sub_to_add_file = open("subtitle_to_add.txt", "w")
+        sub_to_add_file.writelines(sub_list_left)
+        sub_to_add_file.close()
+        if len(sub_add_success_list) > 0:
+            notify_procedure("更新字幕成功：\n\n{}\n\n待更新：\n\n{}".format(str(sub_add_success_list), str(sub_list_left)))
+        return True
+
+
 if __name__ == "__main__":
 
-    # if LOCAL_TEST:
-    #     upload()
+    if LOCAL_TEST:
+        upload()
+        sys.exit(0)
     logging.info("job start")
     while True:
         for username in target_youtube_user:
@@ -548,3 +839,10 @@ if __name__ == "__main__":
                     notify_procedure("下载并上传youtube账户：'{}'\n\n视频：'{}'\n\n成功\n\nid为：{}\n\n共耗时 {}秒".format(username, get_title(), video_id, end_time - start_time))
                     delete_procedure()
             time.sleep(LONG_GAP)
+        # 查询未下载字幕subtitle_to_add列表，如果有字幕可下载则进行处理
+        update_subtitle_result = update_subtitle_procedure()
+        if update_subtitle_result is False:
+            logging.error("update subtitle fail")
+            notify_procedure("更新字幕失败，请检查！")
+            delete_procedure()
+            sys.exit(1)
