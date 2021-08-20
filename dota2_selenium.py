@@ -181,9 +181,9 @@ def upload():
         # 输入简介
         logging.info("description")
         if LOCAL_TEST:
-            WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.visibility_of_element_located((By.XPATH, "//*[@id='js-video-list-content']/div/div[2]/div[8]/div[2]/div[2]/div/div/div/div/div/div[2]/div/div/div/div"))).send_keys("DOTA2精彩视频")
+            WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.visibility_of_element_located((By.XPATH, "//*[@id='js-video-list-content']/div/div[2]/div[8]/div[2]/div[2]/div/div/div/div/div/div[2]/div/div/div/div"))).send_keys("DOTA2精彩视频集锦")
         else:
-            WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.visibility_of_element_located((By.XPATH, "//*[@id='js-video-list-content']/div/div[2]/div[8]/div[2]/div[2]/div/div/div/div/div/div[2]/div/div/div/div"))).send_keys("DOTA2精彩视频" + "\n" + get_title())
+            WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.visibility_of_element_located((By.XPATH, "//*[@id='js-video-list-content']/div/div[2]/div[8]/div[2]/div[2]/div/div/div/div/div/div[2]/div/div/div/div"))).send_keys("DOTA2精彩视频集锦" + "\n" + get_title())
 
         # 互动贴纸按钮
         logging.info("paster")
@@ -233,15 +233,15 @@ def upload():
         logging.info("check webpage handler")
         WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.url_to_be("https://studio.ixigua.com/content?tab=video&investigation_param=cover_edited"))
 
-        # # 放进subtitle_to_add列表中，后面如果有字幕可以下载则更新上去
-        # WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='contentMain']/div/div[4]/div/div[1]/div/div[1]"))).click()
-        # logging.info(driver.current_url)
-        # index = driver.current_url.find("gid=")
-        # ixigua_video_id = driver.current_url[index + 4:index + 23]
-        # subtitle_to_add = open("subtitle_to_add.txt", "a+")
-        # subtitle_to_add.write(str(ixigua_video_id) + "," + str(video_id) + "\n")
-        # subtitle_to_add.close()
-        # logging.info("video_id: {}, ixigua_id: {} added to subtitle_to_add.txt".format(video_id, ixigua_video_id))
+        # 放进subtitle_to_add列表中，后面如果有字幕可以下载则更新上去
+        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='contentMain']/div/div[4]/div/div[1]/div/div[1]"))).click()
+        logging.info(driver.current_url)
+        index = driver.current_url.find("gid=")
+        ixigua_video_id = driver.current_url[index + 4:index + 23]
+        subtitle_to_add = open("subtitle_to_add.txt", "a+")
+        subtitle_to_add.write(str(ixigua_video_id) + "," + str(video_id) + "\n")
+        subtitle_to_add.close()
+        logging.info("video_id: {}, ixigua_id: {} added to subtitle_to_add.txt".format(video_id, ixigua_video_id))
     except Exception as e:
         logging.error("upload error")
         logging.error(e)
