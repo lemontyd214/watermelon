@@ -222,7 +222,7 @@ def upload():
         time.sleep(SHORT_GAP * 2)
 
         # 确认视频上传完毕
-        WebDriverWait(driver, LONG_GAP * 10, TRY_GAP).until(EC.visibility_of_element_located((By.CLASS_NAME, "status")))
+        WebDriverWait(driver, LONG_GAP * 60, TRY_GAP).until(EC.visibility_of_element_located((By.CLASS_NAME, "status")))
         logging.info("video upload finish")
 
         # 点击确认上传
@@ -245,6 +245,7 @@ def upload():
     except Exception as e:
         logging.error("upload error")
         logging.error(e)
+        logging.info("upload percent: {}".format(WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.visibility_of_element_located((By.CLASS_NAME, "percent"))).get_attribute("innerHTML")))
         driver.quit()
         return False
     driver.quit()
@@ -704,7 +705,7 @@ def upload_procedure():
 def delete_procedure():
     # 删除下载产生的文件，保留.py .txt .log和chromedriver
     for file in os.listdir(os.getcwd()):
-        if not (file.endswith(".py") or file.endswith(".txt") or file.endswith(".log") or file == "chromedriver"):
+        if not (file.endswith(".py") or file.endswith(".txt") or file.endswith(".log") or file.endswith(".sh") or file == "chromedriver"):
             os.remove(os.getcwd() + "/" + file)
     logging.info("delete finish")
 
