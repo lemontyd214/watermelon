@@ -164,15 +164,20 @@ def upload():
         WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "/html/body/div[5]/div/div[2]/div/div[2]/button[2]"))).click()
 
         # 确认上传封面后需要一点时间让界面消失、更新
-        time.sleep(SHORT_GAP * 2)
+        logging.info("wait thumbnail upload finish")
+        WebDriverWait(driver, LONG_GAP * 30, TRY_GAP).until_not(EC.visibility_of_element_located((By.XPATH, "//*[@id='tc-ie-base-content']/div[2]/div[2]/div[3]/div[3]/button[2]")))
 
         # 选择视频类型为转载
         logging.info("reproduce")
         WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='js-video-list-content']/div/div[2]/div[6]/div[2]/div/div/label[2]/span/div"))).click()
 
+        # # 输入视频来源
+        # logging.info("video source")
+        # WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.presence_of_element_located((By.XPATH, "//*[@id='js-video-list-content']/div/div[2]/div[7]/div[2]/div/div/div[1]/input"))).send_keys("视频来源 https://www.youtube.com/watch?v={}".format(video_id))
+
         # 展开更多选项
         logging.info("more options")
-        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='js-video-list-content']/div/div[2]/div[8]/div"))).click()
+        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='js-video-list-content']/div/div[2]/div[9]/div"))).click()
 
         # 向下滚动滚动条
         logging.info("scroll down")
@@ -181,9 +186,9 @@ def upload():
         # 输入简介
         logging.info("description")
         if LOCAL_TEST:
-            WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.visibility_of_element_located((By.XPATH, "//*[@id='js-video-list-content']/div/div[2]/div[8]/div[2]/div[2]/div/div/div/div/div/div[2]/div/div/div/div"))).send_keys("DOTA2精彩视频集锦")
+            WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.visibility_of_element_located((By.XPATH, "//*[@id='js-video-list-content']/div/div[2]/div[9]/div[2]/div[2]/div/div/div/div/div/div[2]/div/div/div/div"))).send_keys("DOTA2精彩视频集锦")
         else:
-            WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.visibility_of_element_located((By.XPATH, "//*[@id='js-video-list-content']/div/div[2]/div[8]/div[2]/div[2]/div/div/div/div/div/div[2]/div/div/div/div"))).send_keys("DOTA2精彩视频集锦" + "\n" + get_title())
+            WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.visibility_of_element_located((By.XPATH, "//*[@id='js-video-list-content']/div/div[2]/div[9]/div[2]/div[2]/div/div/div/div/div/div[2]/div/div/div/div"))).send_keys("DOTA2精彩视频集锦" + "\n" + get_title())
 
         # 互动贴纸按钮
         logging.info("paster")
@@ -191,12 +196,12 @@ def upload():
 
         # 点击点赞引导
         logging.info("thumb up")
-        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "/html/body/div[5]/div[2]/div/div[3]/div[2]/div/div[1]/div[2]/div[2]"))).click()
+        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "/html/body/div[5]/div[2]/div/div[3]/div[2]/div/div[1]/div[3]/div[1]/div"))).click()
 
         # 输入起始时间，分+秒
         logging.info("start-end time")
-        start_min = WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.visibility_of_element_located((By.XPATH, "//*[@id='StartTime']/div/div[1]/span/span/input")))
-        start_sec = WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.visibility_of_element_located((By.XPATH, "//*[@id='StartTime']/div/div[2]/span/span/input")))
+        start_min = WebDriverWait(driver, LONG_GAP * 2, TRY_GAP).until(EC.presence_of_element_located((By.XPATH, "//*[@id='StartTime']/div/div[1]/span/span/input")))
+        start_sec = WebDriverWait(driver, LONG_GAP * 2, TRY_GAP).until(EC.presence_of_element_located((By.XPATH, "//*[@id='StartTime']/div/div[2]/span/span/input")))
         if LOCAL_TEST:
             start_min.send_keys(0)
             start_sec.send_keys(1)
@@ -218,12 +223,31 @@ def upload():
         logging.info("confirm paster")
         WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "/html/body/div[5]/div[2]/div/div[3]/div[2]/div/div[3]/div[2]/div/div[2]"))).click()
 
-        # 确认贴纸后需要一点时间让界面消失、刷新
-        time.sleep(SHORT_GAP * 2)
+        # # 确认贴纸后需要一点时间让界面消失、刷新
+        # time.sleep(SHORT_GAP * 2)
+
+        # # 跟进视频上传进度
+        # count = 1
+        # while True:
+        #     percent = WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.visibility_of_element_located((By.CLASS_NAME, "percent"))).get_attribute("innerHTML")[0:-1]
+        #     logging.info("{}. upload percent: {}%".format(count, percent))
+        #     if int(float(percent)) >= 95:
+        #         break
+        #     count += 1
+        #     if count > 20:
+        #         break
+        #     time.sleep(LONG_GAP)
+
+        # 等待上传进度消失
+        logging.info("wait percent to disappear")
+        WebDriverWait(driver, LONG_GAP * 30, TRY_GAP).until_not(EC.visibility_of_element_located((By.CLASS_NAME, "percent")))
 
         # 确认视频上传完毕
-        WebDriverWait(driver, LONG_GAP * 60, TRY_GAP).until(EC.visibility_of_element_located((By.CLASS_NAME, "status")))
+        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.visibility_of_element_located((By.CLASS_NAME, "status")))
         logging.info("video upload finish")
+
+        # 稍等一下
+        time.sleep(SHORT_GAP)
 
         # 点击确认上传
         WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='js-submit-0']/button"))).click()
@@ -233,15 +257,15 @@ def upload():
         logging.info("check webpage handler")
         WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.url_to_be("https://studio.ixigua.com/content?tab=video&investigation_param=cover_edited"))
 
-        # 放进subtitle_to_add列表中，后面如果有字幕可以下载则更新上去
-        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='contentMain']/div/div[4]/div/div[1]/div/div[1]"))).click()
-        logging.info(driver.current_url)
-        index = driver.current_url.find("gid=")
-        ixigua_video_id = driver.current_url[index + 4:index + 23]
-        subtitle_to_add = open("subtitle_to_add.txt", "a+")
-        subtitle_to_add.write(str(ixigua_video_id) + "," + str(video_id) + "\n")
-        subtitle_to_add.close()
-        logging.info("video_id: {}, ixigua_id: {} added to subtitle_to_add.txt".format(video_id, ixigua_video_id))
+        # # 放进subtitle_to_add列表中，后面如果有字幕可以下载则更新上去
+        # WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='contentMain']/div/div[4]/div/div[1]/div/div[1]"))).click()
+        # logging.info(driver.current_url)
+        # index = driver.current_url.find("gid=")
+        # ixigua_video_id = driver.current_url[index + 4:index + 23]
+        # subtitle_to_add = open("subtitle_to_add.txt", "a+")
+        # subtitle_to_add.write(str(ixigua_video_id) + "," + str(video_id) + "\n")
+        # subtitle_to_add.close()
+        # logging.info("video_id: {}, ixigua_id: {} added to subtitle_to_add.txt".format(video_id, ixigua_video_id))
     except Exception as e:
         logging.error("upload error")
         logging.error(e)
@@ -836,8 +860,9 @@ if __name__ == "__main__":
                     notify_procedure("下载并上传youtube账户：'{}'\n\n视频：'{}'\n\n成功\n\nid为：{}\n\n共耗时 {}秒".format(username, get_title(), video_id, end_time - start_time))
                     delete_procedure()
                     logging.info("******************** finish processing new video {} ********************".format(video_id))
-            time.sleep(LONG_GAP)
+                    time.sleep(LONG_GAP)
         logging.info("****************************** finish processing new videos ******************************")
+        time.sleep(LONG_GAP)
         # # 查询未下载字幕subtitle_to_add列表，如果有字幕可下载则进行处理
         # update_subtitle_result = update_subtitle_procedure()
         # if update_subtitle_result is False:
