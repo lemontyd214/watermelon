@@ -444,7 +444,7 @@ def rename(video_title):
     name_result = ""
     video_title_split = video_title.split(" ")
     for word in video_title_split:
-        if len(name_result + word + " ") <= 30:
+        if len(name_result + word + " ") <= 60:
             name_result += word + " "
         else:
             break
