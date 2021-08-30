@@ -161,7 +161,7 @@ def upload():
 
         # 双重确认
         logging.info("double confirm thumbnail")
-        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "/html/body/div[5]/div/div[2]/div/div[2]/button[2]"))).click()
+        WebDriverWait(driver, LONG_GAP * 2, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "/html/body/div[5]/div/div[2]/div/div[2]/button[2]"))).click()
 
         # 确认上传封面后需要一点时间让界面消失、更新
         logging.info("wait thumbnail upload finish")
@@ -833,10 +833,12 @@ if __name__ == "__main__":
     logging.info("job start")
     while True:
         logging.info("****************************** start processing new videos ******************************")
+        new_video_flag = False
         for username in target_youtube_user:
             video_list = find_all(username)
             for video_id in video_list:
                 if not check_uploaded(video_id):
+                    new_video_flag = True
                     start_time = time.time()
                     logging.info("******************** start processing new video : {} ********************".format(video_id))
                     download_success = download_procedure(video_id)
@@ -861,8 +863,10 @@ if __name__ == "__main__":
                     delete_procedure()
                     logging.info("******************** finish processing new video {} ********************".format(video_id))
                     time.sleep(LONG_GAP)
+        if new_video_flag is False:
+            logging.info("no new video found")
         logging.info("****************************** finish processing new videos ******************************")
-        time.sleep(LONG_GAP)
+        time.sleep(LONG_GAP * 2)
         # # 查询未下载字幕subtitle_to_add列表，如果有字幕可下载则进行处理
         # update_subtitle_result = update_subtitle_procedure()
         # if update_subtitle_result is False:

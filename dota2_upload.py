@@ -158,7 +158,7 @@ def upload(video_id):
 
         # 双重确认
         logging.info("double confirm thumbnail")
-        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "/html/body/div[5]/div/div[2]/div/div[2]/button[2]"))).click()
+        WebDriverWait(driver, LONG_GAP * 2, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "/html/body/div[5]/div/div[2]/div/div[2]/button[2]"))).click()
 
         # 确认上传封面后需要一点时间让界面消失、更新
         logging.info("wait thumbnail upload finish")
