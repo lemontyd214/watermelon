@@ -96,7 +96,7 @@ def upload():
 
         # 读取cookie
         logging.info("read cookies")
-        with open('cookies.txt', 'r') as f:
+        with open('xigua_cookies.json', 'r') as f:
             # 使用json读取cookies 注意读取的是文件 所以用load而不是loads
             cookies_list = json.load(f)
             for cookie in cookies_list:
