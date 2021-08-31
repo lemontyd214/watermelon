@@ -37,7 +37,6 @@ else:
 
 target_youtube_user = [
     "NoobfromuaDota2",
-    "DotadigestDD"
 ]
 
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
@@ -393,21 +392,27 @@ def vtt2srt():
 
 # 获取某个youtube用户的全部视频列表
 def find_all(username):
-    id_list = []
-    sub = "watch?v="
-    s = requests.get("https://www.youtube.com/c/{}/videos".format(username)).text
-    index = s.find(sub)
-    while index != -1:
-        video_id = s[(index + 8): (index + 19)]
-        id_list.append(video_id)
-        index = s.find(sub, index + 1)
+    attempt = 1
+    while True:
+        id_list = []
+        sub = "watch?v="
+        s = requests.get("https://www.youtube.com/c/{}/videos".format(username)).text
+        index = s.find(sub)
+        while index != -1:
+            video_id = s[(index + 8): (index + 19)]
+            id_list.append(video_id)
+            index = s.find(sub, index + 1)
 
-    if len(id_list) > 0:
-        return id_list
-    else:
-        logging.error("get video list for '{}' fail".format(username))
-        notify_procedure("获取youtube账户：'{}' 视频列表信息失败，请检查！".format(username))
-        sys.exit(1)
+        if len(id_list) > 0:
+            return id_list
+        else:
+            attempt += 1
+            time.sleep(LONG_GAP)
+
+        if attempt > 5:
+            logging.error("get video list for '{}' fail after 5 attempts".format(username))
+            notify_procedure("获取youtube账户：'{}' 视频列表信息失败，请检查！".format(username))
+            sys.exit(1)
 
 
 # 检查某个视频id是否已经上传过并记录在history.txt中
