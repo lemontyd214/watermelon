@@ -1,1 +1,5 @@
 /.idea/
+*.mp4
+*.jpg
+*.json
+/download/
