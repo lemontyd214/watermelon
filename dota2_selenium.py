@@ -140,7 +140,7 @@ def upload():
         video_input = WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.presence_of_element_located((By.XPATH, "//input[@type='file']")))
         logging.info("upload video")
         if LOCAL_TEST:
-            video_input.send_keys(r"D:\Watermelon\ELEPHANT vs RNG - TOP 4 ELIMINATION - i-League 2021 S2 Dota 2 Highlights-5K3frkW9k4s.mp4")
+            video_input.send_keys(r"D:\Watermelon\test.mp4")
         else:
             video_input.send_keys(get_video())
 
@@ -164,7 +164,7 @@ def upload():
         logging.info("upload thumbnail")
         video_input = WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.presence_of_element_located((By.XPATH, "//input[@type='file']")))
         if LOCAL_TEST:
-            video_input.send_keys(r"D:\Watermelon\ELEPHANT vs RNG - TOP 4 ELIMINATION - i-League 2021 S2 Dota 2 Highlights-5K3frkW9k4s.jpg")
+            video_input.send_keys(r"D:\Watermelon\test.jpg")
         else:
             video_input.send_keys(get_thumbnail())
 
@@ -185,11 +185,11 @@ def upload():
 
         # 选择视频类型为转载
         logging.info("reproduce")
-        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='js-video-list-content']/div/div[2]/div[6]/div[2]/div/div/label[2]/span/div"))).click()
+        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='js-video-list-content']/div/div[2]/div[7]/div[2]/div/div/label[2]/span/div"))).click()
 
         # 展开更多选项
         logging.info("more options")
-        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='js-video-list-content']/div/div[2]/div[9]/div"))).click()
+        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.CLASS_NAME, "fold-title"))).click()
 
         # 向下滚动滚动条
         logging.info("scroll down")
@@ -198,9 +198,9 @@ def upload():
         # 输入简介
         logging.info("description")
         if LOCAL_TEST:
-            WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.visibility_of_element_located((By.XPATH, "//*[@id='js-video-list-content']/div/div[2]/div[9]/div[2]/div[2]/div/div/div/div/div/div[2]/div/div/div/div"))).send_keys("DOTA2精彩视频集锦")
+            WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.visibility_of_element_located((By.XPATH, "//*[@id='js-video-list-content']/div/div[2]/div[10]/div[2]/div[2]/div/div/div/div/div/div[2]/div/div/div/div"))).send_keys("DOTA2精彩视频集锦")
         else:
-            WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.visibility_of_element_located((By.XPATH, "//*[@id='js-video-list-content']/div/div[2]/div[9]/div[2]/div[2]/div/div/div/div/div/div[2]/div/div/div/div"))).send_keys("DOTA2精彩视频集锦" + "\n" + get_title())
+            WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.visibility_of_element_located((By.XPATH, "//*[@id='js-video-list-content']/div/div[2]/div[10]/div[2]/div[2]/div/div/div/div/div/div[2]/div/div/div/div"))).send_keys("DOTA2精彩视频集锦" + "\n" + get_title())
 
         # 互动贴纸按钮
         logging.info("paster")
