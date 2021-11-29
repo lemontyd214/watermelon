@@ -120,13 +120,17 @@ def upload():
             driver.quit()
             return False
 
-        # 关闭创作者排行提示框（应该是暂时的）
-        logging.info("close producer rank pop-out window")
+        # 关闭素材库提示框（应该是暂时的）
+        logging.info("close material library window")
         WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='driver-popover-item']/div[3]/div/div/div[2]"))).click()
 
-        # 关闭数据分析提示框（应该是暂时的）
-        logging.info("close data pop-out window")
-        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='driver-popover-item']/div[3]/div/div/div[2]"))).click()
+        # # 关闭创作者排行提示框（应该是暂时的）
+        # logging.info("close producer rank pop-out window")
+        # WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='driver-popover-item']/div[3]/div/div/div[2]"))).click()
+        #
+        # # 关闭数据分析提示框（应该是暂时的）
+        # logging.info("close data pop-out window")
+        # WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='driver-popover-item']/div[3]/div/div/div[2]"))).click()
 
         # 发布视频按钮
         logging.info("upload button")

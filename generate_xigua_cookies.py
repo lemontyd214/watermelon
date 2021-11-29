@@ -34,7 +34,7 @@ def generate():
         time.sleep(60)
         cookies = driver.get_cookies()
         jsonCookies = json.dumps(cookies)
-        with open('xigua_cookies.json', 'w') as f:
+        with open('xigua_cookies.txt', 'w') as f:
             f.write(jsonCookies)
         print("cookie更新完成")
         driver.quit()
