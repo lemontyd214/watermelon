@@ -36,7 +36,8 @@ else:
 
 
 target_youtube_user = [
-    "NoobfromuaDota2"
+    "NoobfromuaDota2",
+    "DotaWatafak"
     # "DotadigestDD"
 ]
 
@@ -119,9 +120,13 @@ def upload():
             driver.quit()
             return False
 
+        # 关闭创作者排行提示框（应该是暂时的）
+        logging.info("close producer rank pop-out window")
+        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='driver-popover-item']/div[3]/div/div/div[2]"))).click()
+
         # 关闭数据分析提示框（应该是暂时的）
-        logging.info("close pop-out window")
-        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.CLASS_NAME, "driver-close-btn"))).click()
+        logging.info("close data pop-out window")
+        WebDriverWait(driver, LONG_GAP, TRY_GAP).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='driver-popover-item']/div[3]/div/div/div[2]"))).click()
 
         # 发布视频按钮
         logging.info("upload button")
@@ -324,6 +329,7 @@ def find_all(username):
             index = s.find(sub, index + 1)
 
         if len(id_list) > 0:
+            id_list.reverse()
             return id_list
         else:
             attempt += 1
@@ -488,6 +494,7 @@ if __name__ == "__main__":
                     history = open("history.txt", "a+")
                     history.write(str(video_id) + "\n")
                     history.close()
+                    logging.info("video '{}' write success in history".format(video_id))
                     end_time = time.time()
                     notify_procedure("下载并上传youtube账户：'{}'\n\n视频：'{}'\n\n成功\n\nid为：{}\n\n共耗时 {}秒".format(username, get_title(), video_id, end_time - start_time))
                     delete_procedure()
